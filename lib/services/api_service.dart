@@ -157,15 +157,34 @@ class ApiService {
 
       if (response.statusCode == 200) {
         String responseText = response.body;
-        responseMessage = ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text:
-              responseText.isEmpty ? "(Received empty response)" : responseText,
-          timestamp: DateTime.now(),
-          isUser: false,
-          modelUsed: model,
-          type: MessageType.text,
-        );
+        try {
+          // Parse the JSON response
+          final jsonResponse = json.decode(responseText);
+          // Extract the 'output' field from the JSON
+          final outputText = jsonResponse['output'] as String? ?? responseText;
+
+          responseMessage = ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            text: outputText.isEmpty ? "(Received empty response)" : outputText,
+            timestamp: DateTime.now(),
+            isUser: false,
+            modelUsed: model,
+            type: MessageType.text,
+          );
+        } catch (e) {
+          // If JSON parsing fails, use the raw response
+          responseMessage = ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            text:
+                responseText.isEmpty
+                    ? "(Received empty response)"
+                    : responseText,
+            timestamp: DateTime.now(),
+            isUser: false,
+            modelUsed: model,
+            type: MessageType.text,
+          );
+        }
       } else {
         throw Exception(
           'API request failed with status: ${response.statusCode} - ${response.body}',
